@@ -1,0 +1,43 @@
+.container {
+  width: 100%;
+  display: flex;
+  max-width: 1204px;
+  height: 100%;
+  margin: 84px auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 42px;
+
+  @media (max-width:420px) {
+    padding: 0px 10px;
+  }
+
+  &.register2 {
+    margin: 20px auto;
+    gap: 36px;
+
+    &>article {
+      display: flex;
+      flex-direction: row;
+      gap: 185px;
+      align-items: center;
+
+      @media (max-width:420px) {
+        display: flex;
+        width: 100%;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0px;
+      }
+    }
+
+  }
+
+  &.dash {
+    // gap: 240px;
+    margin: 0px 0px;
+    max-width: 100%;
+  }
+
+}

@@ -1,0 +1,16 @@
+:root {
+    --color-btnRosa: #FF577F;
+    --color-background: #121214;
+    --color-LogiLabel: #F8F9FA;
+    --color-Box: #212529;
+    --color-NBtn: #868E96;
+    --color-sucess: #3FE864;
+    --color-wrong: #E83F5B;
+    --color-input: #343B41;
+    --color-desble: #59323F;
+
+    --font-primary: 'Inter', sans-serif;
+}
+body{
+    background-color: var(--color-background);
+}
