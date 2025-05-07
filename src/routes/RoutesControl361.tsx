@@ -1,7 +1,7 @@
 import { Route, Routes } from "react-router-dom"
 import Home from "../pages/Home"
 
-function RoutesHead() {
+function RoutesControl361() {
 
     return (
         <>
@@ -11,4 +11,4 @@ function RoutesHead() {
         </>
     )
 }
-export default RoutesHead
+export default RoutesControl361
