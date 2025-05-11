@@ -38,6 +38,7 @@ interface ApiResponse {
 interface GetVehiclesParams {
     type?: string;
     page?: number;
+    perPage?: number;
 }
 
 const api = axios.create({
@@ -48,8 +49,8 @@ const api = axios.create({
     }
 });
 
-export const getVehicles = async ({ type = 'tracked', page = 1 }: GetVehiclesParams): Promise<ApiResponse> => {
-    const response = await api.get<ApiResponse>(`/vehicles/list-with-paginate?type=${type}&page=${page}`);
+export const getVehicles = async ({ type = 'tracked', page = 1, perPage = 20 }: GetVehiclesParams): Promise<ApiResponse> => {
+    const response = await api.get<ApiResponse>(`/vehicles/list-with-paginate?type=${type}&page=${page}&perPage=${perPage}`);
     return response.data;
 };
 
