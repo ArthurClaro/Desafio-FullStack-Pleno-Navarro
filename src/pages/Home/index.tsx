@@ -1,14 +1,8 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { GoogleMap, LoadScript, Marker, InfoWindow } from '@react-google-maps/api';
-import { getVehicles } from '../../services/api';
+import { useState } from 'react';
 import { VehiclesTable } from '../../components/VehiclesTable';
 import { Button } from 'primereact/button';
-import { CiDeliveryTruck } from "react-icons/ci";
-import truck from '../../assets/Truck.svg'
-import { MapGoogle } from '../../components/Map';
 import { RadioButton } from "primereact/radiobutton";
-
+import { MapGoogle } from '../../components/Map';
 
 function Home() {
     const [ingredient, setIngredient] = useState('');
