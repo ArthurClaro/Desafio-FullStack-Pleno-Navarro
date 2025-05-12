@@ -1,3 +1,41 @@
+@import './reset.scss';
+@import './global.scss';
+@import './typograph.scss';
+
+.article * {
+  all: revert;
+
+}
+
+.custom-radio {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #0095E4;
+  border-radius: 50%;
+  background-color: black;
+  cursor: pointer;
+  position: relative;
+  cursor: pointer;
+
+  &:checked {
+    background-color: #0095E4;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 8px;
+      height: 8px;
+      background-color: black;
+      border-radius: 50%;
+    }
+  }
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -66,26 +104,66 @@
   }
 }
 
-.gm-style-iw.gm-style-iw-c {
-  // background-color: black;
-  // z-index: 1 !important;
-  // display: none;
+
+
+.p-datatable-thead {
+  &>tr {
+    &>th {
+      padding: 16px;
+      background-color: #001622;
+      color: #FFFFFF;
+      border-color: #002D44;
+    }
+  }
 }
 
-.gm-style-iw {
-  // display: none !important;
+.p-datatable-tbody {
+  &>tr {
+    &>td {
+      padding: 16px;
+      background-color: #001622;
+      color: #C8C8C8;
+      border-color: #002D44;
+    }
+  }
 }
 
-// .gm-style-iw button {
-//   display: none !important;
-// }
 
-/* esconde especificamente o botão de fechar (é o único button que aparece ali) */
-.gm-style-iw>div>button {
-  // display: none !important;
+
+
+// ///////////////////////////////////////////////////////////////////////////////////////
+
+body {
+  overflow: hidden;
+  height: 100vh;
 }
 
-.gm-style-iw-chr {
-  // display: none !important;
+.main-scroll {
+  height: calc(100vh - 50px);
+  /* 50px é a altura aproximada do header */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
 
+.main-scroll::-webkit-scrollbar {
+  width: 20px;
+  /* width of the entire scrollbar */
+}
+
+.main-scroll::-webkit-scrollbar-track {
+  background: #001622;
+  /* color of the tracking area */
+}
+
+.main-scroll::-webkit-scrollbar-thumb {
+  background-color: #002D44;
+  /* color of the scroll thumb */
+  border-radius: 8px;
+  /* roundness of the scroll thumb */
+}
+
+// /////////////////////////////
+
+.datatable-scroll::-webkit-scrollbar {
+  width: 0px;
 }

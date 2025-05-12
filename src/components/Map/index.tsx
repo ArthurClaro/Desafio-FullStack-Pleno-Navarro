@@ -1,10 +1,11 @@
 import { GoogleMap, LoadScript, Marker, InfoWindow } from '@react-google-maps/api';
-import { getVehicles } from '../../services/api';
 import { useState, useCallback, useMemo } from 'react';
+import { useVehicles } from '../../contexts/VehiclesContext';
 
 const containerStyle = {
-    width: '80vw',
-    height: '600px'
+    width: '100%',
+    height: '512px',
+    borderRadius: '16px'
 };
 
 const center = {
@@ -25,62 +26,44 @@ interface VehicleLocation {
 
 export const MapGoogle = () => {
     const [selectedVehicle, setSelectedVehicle] = useState<VehicleLocation | null>(null);
-    const [mapVehicles, setMapVehicles] = useState<VehicleLocation[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [isMapReady, setIsMapReady] = useState(false);
-
-    const fetchVehicles = async () => {
-        try {
-            setIsLoading(true);
-            setError(null);
-            // console.log('Iniciando busca de veículos...');
-            const response = await getVehicles({ type: 'tracked', page: 1 });
-            console.log('Resposta da API:', response);
-            
-            if (response.content.locationVehicles) {
-                const uniqueVehicles = response.content.locationVehicles.reduce((acc, vehicle) => {
-                    // está reduzindo objetos com IDs repetidos 
-                    const existingVehicle = acc.find(v => v.plate === vehicle.plate);
-                    if (!existingVehicle || new Date(vehicle.createdAt) > new Date(existingVehicle.createdAt)) {
-                        return [...acc.filter(v => v.plate !== vehicle.plate), vehicle];
-                    }
-                    return acc;
-                }, [] as VehicleLocation[]);
-
-                // console.log('Veículos processados:', uniqueVehicles);
-                setMapVehicles(uniqueVehicles);
-            }
-        } catch (err) {
-            console.error('Erro detalhado:', err);
-            setError('Erro ao carregar os veículos');
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    const { locationVehicles, isLoading, error, searchTerm } = useVehicles();
 
     const onMapLoad = useCallback(() => {
-        // console.log('Mapa carregado, buscando veículos...');
         setIsMapReady(true);
-        fetchVehicles();
     }, []);
 
     const handleMarkerClick = useCallback((vehicle: VehicleLocation) => {
-        // console.log('Marcador clicado:', vehicle.plate);
         setSelectedVehicle(vehicle);
     }, []);
 
     const handleInfoWindowClose = useCallback(() => {
-        // console.log('Fechando InfoWindow');
         setSelectedVehicle(null);
     }, []);
 
-    const markers = useMemo(() => {
-        if (!isMapReady || !mapVehicles.length) return null;
+    const filteredVehicles = useMemo(() => {
+        // Primeiro, vamos agrupar os veículos por placa e pegar o mais recente de cada um
+        const uniqueVehicles = locationVehicles.reduce((acc: VehicleLocation[], vehicle: VehicleLocation) => {
+            const existingVehicle = acc.find((v: VehicleLocation) => v.plate === vehicle.plate);
+            if (!existingVehicle || new Date(vehicle.createdAt) > new Date(existingVehicle.createdAt)) {
+                return [...acc.filter((v: VehicleLocation) => v.plate !== vehicle.plate), vehicle];
+            }
+            return acc;
+        }, []);
 
-        return mapVehicles.map((vehicle) => (
+        // Depois, aplicamos o filtro de busca
+        return uniqueVehicles.filter((vehicle: VehicleLocation) =>
+            vehicle.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (vehicle.fleet && vehicle.fleet.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+    }, [locationVehicles, searchTerm]);
+
+    const markers = useMemo(() => {
+        if (!isMapReady || !filteredVehicles.length) return null;
+
+        return filteredVehicles.map((vehicle: VehicleLocation, index: number) => (
             <Marker
-                key={vehicle.plate}
+                key={`${vehicle.plate}-${vehicle.equipmentId}-${index}`}
                 position={{
                     lat: vehicle.lat,
                     lng: vehicle.lng
@@ -90,7 +73,7 @@ export const MapGoogle = () => {
                 zIndex={selectedVehicle?.plate === vehicle.plate ? 1 : 0}
             />
         ));
-    }, [isMapReady, mapVehicles, handleMarkerClick, selectedVehicle]);
+    }, [isMapReady, filteredVehicles, handleMarkerClick, selectedVehicle]);
 
     const infoWindow = useMemo(() => {
         if (!selectedVehicle) return null;
@@ -123,7 +106,7 @@ export const MapGoogle = () => {
     }
 
     return (
-        <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
+        <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} >
             <GoogleMap
                 mapContainerStyle={containerStyle}
                 center={center}

@@ -1,6 +1,6 @@
 :root {
     --color-btnRosa: #FF577F;
-    --color-background: #121214;
+    --color-background: #000F17;
     --color-LogiLabel: #F8F9FA;
     --color-Box: #212529;
     --color-NBtn: #868E96;
@@ -9,8 +9,11 @@
     --color-input: #343B41;
     --color-desble: #59323F;
 
-    --font-primary: 'Inter', sans-serif;
+    --font-primary: "Poppins", sans-serif;
+    --font-secundary: 'Inter', sans-serif;
 }
-body{
+
+body {
     background-color: var(--color-background);
+    font-family: var(--font-primary);
 }
