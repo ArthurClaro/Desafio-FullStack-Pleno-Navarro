@@ -1,15 +1,21 @@
 import { GoogleMap, LoadScript, Marker, InfoWindow } from '@react-google-maps/api';
-import { getVehicles } from '../../services/api';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useVehicles } from '../../contexts/VehiclesContext';
 
 const containerStyle = {
-    width: '80vw',
-    height: '600px'
+    width: '100%',
+    height: '512px',
+    borderRadius: '16px'
 };
 
 const center = {
     lat: -23.550520,
     lng: -46.633308
+};
+
+// Função para criar o ícone do caminhão
+const createTruckIcon = () => {
+    return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);"><path d="M19.15 8a2 2 0 0 0-1.72-1H15V5a1 1 0 0 0-1-1H4a2 2 0 0 0-2 2v10a2 2 0 0 0 1 1.73 3.49 3.49 0 0 0 7 .27h3.1a3.48 3.48 0 0 0 6.9 0 2 2 0 0 0 2-2v-3a1.07 1.07 0 0 0-.14-.52zM15 9h2.43l1.8 3H15zM6.5 19A1.5 1.5 0 1 1 8 17.5 1.5 1.5 0 0 1 6.5 19zm10 0a1.5 1.5 0 1 1 1.5-1.5 1.5 1.5 0 0 1-1.5 1.5z"></path></svg>`;
 };
 
 interface VehicleLocation {
@@ -25,86 +31,66 @@ interface VehicleLocation {
 
 export const MapGoogle = () => {
     const [selectedVehicle, setSelectedVehicle] = useState<VehicleLocation | null>(null);
-    const [mapVehicles, setMapVehicles] = useState<VehicleLocation[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [isMapReady, setIsMapReady] = useState(false);
+    const { locationVehicles, isLoading, error, searchTerm, refetch } = useVehicles();
 
-    const fetchVehicles = async () => {
-        try {
-            setIsLoading(true);
-            setError(null);
-            // console.log('Iniciando busca de veículos...');
-            const response = await getVehicles({ type: 'tracked', page: 1 });
-            console.log('Resposta da API:', response);
-            
-            if (response.content.locationVehicles) {
-                const uniqueVehicles = response.content.locationVehicles.reduce((acc, vehicle) => {
-                    // está reduzindo objetos com IDs repetidos 
-                    const existingVehicle = acc.find(v => v.plate === vehicle.plate);
-                    if (!existingVehicle || new Date(vehicle.createdAt) > new Date(existingVehicle.createdAt)) {
-                        return [...acc.filter(v => v.plate !== vehicle.plate), vehicle];
-                    }
-                    return acc;
-                }, [] as VehicleLocation[]);
+    useEffect(() => {
+        refetch();
+        const intervalId = setInterval(refetch, 120000);
+        return () => clearInterval(intervalId);
+    }, [refetch]);
 
-                // console.log('Veículos processados:', uniqueVehicles);
-                setMapVehicles(uniqueVehicles);
-            }
-        } catch (err) {
-            console.error('Erro detalhado:', err);
-            setError('Erro ao carregar os veículos');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const onMapLoad = useCallback(() => {
-        // console.log('Mapa carregado, buscando veículos...');
-        setIsMapReady(true);
-        fetchVehicles();
-    }, []);
+    const onMapLoad = useCallback(() => setIsMapReady(true), []);
 
     const handleMarkerClick = useCallback((vehicle: VehicleLocation) => {
-        // console.log('Marcador clicado:', vehicle.plate);
         setSelectedVehicle(vehicle);
     }, []);
 
     const handleInfoWindowClose = useCallback(() => {
-        // console.log('Fechando InfoWindow');
         setSelectedVehicle(null);
     }, []);
 
-    const markers = useMemo(() => {
-        if (!isMapReady || !mapVehicles.length) return null;
+    const filteredVehicles = useMemo(() => {
+        const uniqueVehicles = locationVehicles.reduce((acc: VehicleLocation[], vehicle: VehicleLocation) => {
+            const existingVehicle = acc.find((v: VehicleLocation) => v.plate === vehicle.plate);
+            if (!existingVehicle || new Date(vehicle.createdAt) > new Date(existingVehicle.createdAt)) {
+                return [...acc.filter((v: VehicleLocation) => v.plate !== vehicle.plate), vehicle];
+            }
+            return acc;
+        }, []);
 
-        return mapVehicles.map((vehicle) => (
+        return uniqueVehicles.filter((vehicle: VehicleLocation) =>
+            vehicle.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (vehicle.fleet && vehicle.fleet.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+    }, [locationVehicles, searchTerm]);
+
+    const markers = useMemo(() => {
+        if (!isMapReady || !filteredVehicles.length) return null;
+
+        return filteredVehicles.map((vehicle: VehicleLocation, index: number) => (
             <Marker
-                key={vehicle.plate}
-                position={{
-                    lat: vehicle.lat,
-                    lng: vehicle.lng
-                }}
+                key={`${vehicle.plate}-${vehicle.equipmentId}-${index}`}
+                position={{ lat: vehicle.lat, lng: vehicle.lng }}
                 title={`${vehicle.plate} - ${vehicle.name}`}
                 onClick={() => handleMarkerClick(vehicle)}
                 zIndex={selectedVehicle?.plate === vehicle.plate ? 1 : 0}
+                icon={{
+                    url: createTruckIcon(),
+                    scaledSize: new window.google.maps.Size(30, 30),
+                }}
             />
         ));
-    }, [isMapReady, mapVehicles, handleMarkerClick, selectedVehicle]);
+    }, [isMapReady, filteredVehicles, handleMarkerClick, selectedVehicle]);
 
     const infoWindow = useMemo(() => {
         if (!selectedVehicle) return null;
 
         return (
             <InfoWindow
-                position={{
-                    lat: selectedVehicle.lat,
-                    lng: selectedVehicle.lng
-                }}
+                position={{ lat: selectedVehicle.lat, lng: selectedVehicle.lng }}
                 onCloseClick={handleInfoWindowClose}
-                options={{
-                    pixelOffset: new window.google.maps.Size(0, -30)
-                }}
+                options={{ pixelOffset: new window.google.maps.Size(0, -30) }}
             >
                 <div style={{ padding: '8px' }}>
                     <h3 style={{ margin: '0 0 8px 0' }}>Informações do Veículo</h3>
@@ -113,6 +99,16 @@ export const MapGoogle = () => {
                     <p style={{ margin: '4px 0' }}><strong>Frota:</strong> {selectedVehicle.fleet}</p>
                     <p style={{ margin: '4px 0' }}><strong>Equipamento:</strong> {selectedVehicle.equipmentId}</p>
                     <p style={{ margin: '4px 0' }}><strong>Ignição:</strong> {selectedVehicle.ignition}</p>
+                    <p style={{ margin: '4px 0' }}>
+                        <a
+                            href={`https://www.google.com/maps?q=${selectedVehicle.lat},${selectedVehicle.lng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: '#1a73e8', textDecoration: 'none' }}
+                        >
+                            Ver no Google Maps
+                        </a>
+                    </p>
                 </div>
             </InfoWindow>
         );
@@ -127,7 +123,7 @@ export const MapGoogle = () => {
             <GoogleMap
                 mapContainerStyle={containerStyle}
                 center={center}
-                zoom={10}
+                zoom={8}
                 onLoad={onMapLoad}
             >
                 {markers}

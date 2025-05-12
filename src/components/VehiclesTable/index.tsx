@@ -1,43 +1,26 @@
-import { useQuery } from '@tanstack/react-query';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { useState, useEffect } from 'react';
-import { getVehicles } from '../../services/api';
+import { useVehicles } from '../../contexts/VehiclesContext';
 import InfiniteScroll from 'react-infinite-scroll-component';
 
 export const VehiclesTable = () => {
     const [page, setPage] = useState(1);
-    const type = 'tracked';
     const [allVehicles, setAllVehicles] = useState<any[]>([]);
-
-    const {
-        data,
-        isLoading,
-        error: queryError,
-        isError,
-        refetch
-    } = useQuery({
-        queryKey: ['vehicles', type, page],
-        queryFn: () => getVehicles({ type, page, perPage: 20 }),
-        retry: 1,
-        retryDelay: 1000,
-    });
-    console.log(data, 'reposta api tb')
+    const { vehicles, isLoading, error, refetch, searchTerm } = useVehicles();
 
     useEffect(() => {
-        if (data?.content?.vehicles) {
-            setAllVehicles(page === 1 ? data.content.vehicles : [...allVehicles, ...data.content.vehicles]);
+        if (vehicles) {
+            setAllVehicles(page === 1 ? vehicles : [...allVehicles, ...vehicles]);
         }
-    }, [data, page]);
+    }, [vehicles, page]);
 
-    const fetchMoreData = () => {
-        if (data?.content?.totalPages && page >= data.content.totalPages) {
-            setPage(1);
-            setAllVehicles([]);
-            return;
-        }
-        setPage(prev => prev + 1);
-    };
+    const filteredVehicles = allVehicles.filter(vehicle =>
+        vehicle.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (vehicle.fleet && vehicle.fleet.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+
+    const fetchMoreData = () => setPage(prev => prev + 1);
 
     useEffect(() => {
         if (page === 1) {
@@ -47,7 +30,8 @@ export const VehiclesTable = () => {
     }, [page]);
 
     if (isLoading && page === 1) return <div>Carregando...</div>;
-    if (isError || queryError) {
+    
+    if (error) {
         return (
             <div>
                 <div>Erro ao carregar dados</div>
@@ -63,9 +47,9 @@ export const VehiclesTable = () => {
     }
 
     return (
-        <div id="scrollableDiv" style={{ height: '500px', overflow: 'auto' }}>
+        <div id="scrollableDiv" className="h-[500px] datatable-scroll overflow-auto rounded-[16px] custom-vehicles-table mb-10">
             <InfiniteScroll
-                dataLength={allVehicles.length}
+                dataLength={filteredVehicles.length}
                 next={fetchMoreData}
                 hasMore={true}
                 loader={<div style={{ textAlign: 'center', padding: '10px' }}>Carregando mais veículos...</div>}
@@ -77,15 +61,15 @@ export const VehiclesTable = () => {
                 }
             >
                 <DataTable
-                    value={allVehicles}
+                    value={filteredVehicles}
                     tableStyle={{ minWidth: '50rem' }}
                     className="p-datatable-scrollable-body"
                 >
-                    <Column field="plate" header="Placa"></Column>
-                    <Column field="model" header="Modelo"></Column>
-                    <Column field="type" header="Tipo"></Column>
-                    <Column field="nameOwner" header="Proprietário"></Column>
-                    <Column field="status" header="Status"></Column>
+                    <Column field="plate" header="Placa" />
+                    <Column field="model" header="Modelo" />
+                    <Column field="type" header="Tipo" />
+                    <Column field="nameOwner" header="Proprietário" />
+                    <Column field="status" header="Status" />
                 </DataTable>
             </InfiniteScroll>
         </div>
