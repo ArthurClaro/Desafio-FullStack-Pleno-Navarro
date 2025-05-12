@@ -8,7 +8,7 @@ export const VehiclesTable = () => {
     const [page, setPage] = useState(1);
     const [allVehicles, setAllVehicles] = useState<any[]>([]);
     const { vehicles, isLoading, error, refetch, searchTerm } = useVehicles();
-    // console.log(vehicles);
+    // console.log(vehicles,'gsegse');
     useEffect(() => {
         if (vehicles) {
             setAllVehicles(page === 1 ? vehicles : [...allVehicles, ...vehicles]);

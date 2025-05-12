@@ -1,5 +1,5 @@
 import { GoogleMap, LoadScript, Marker, InfoWindow } from '@react-google-maps/api';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useVehicles } from '../../contexts/VehiclesContext';
 
 const containerStyle = {
@@ -11,6 +11,11 @@ const containerStyle = {
 const center = {
     lat: -23.550520,
     lng: -46.633308
+};
+
+// Função para criar o ícone do caminhão
+const createTruckIcon = () => {
+    return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: rgba(0, 0, 0, 1);"><path d="M19.15 8a2 2 0 0 0-1.72-1H15V5a1 1 0 0 0-1-1H4a2 2 0 0 0-2 2v10a2 2 0 0 0 1 1.73 3.49 3.49 0 0 0 7 .27h3.1a3.48 3.48 0 0 0 6.9 0 2 2 0 0 0 2-2v-3a1.07 1.07 0 0 0-.14-.52zM15 9h2.43l1.8 3H15zM6.5 19A1.5 1.5 0 1 1 8 17.5 1.5 1.5 0 0 1 6.5 19zm10 0a1.5 1.5 0 1 1 1.5-1.5 1.5 1.5 0 0 1-1.5 1.5z"></path></svg>`;
 };
 
 interface VehicleLocation {
@@ -27,7 +32,20 @@ interface VehicleLocation {
 export const MapGoogle = () => {
     const [selectedVehicle, setSelectedVehicle] = useState<VehicleLocation | null>(null);
     const [isMapReady, setIsMapReady] = useState(false);
-    const { locationVehicles, isLoading, error, searchTerm } = useVehicles();
+    const { locationVehicles, isLoading, error, searchTerm, refetch } = useVehicles();
+    console.log('Dados atualizados:', locationVehicles);
+
+    useEffect(() => {
+        refetch();
+
+        const intervalId = setInterval(() => {
+            refetch();
+        }, 120000);
+
+        return () => {
+            clearInterval(intervalId);
+        };
+    }, [refetch]);
 
     const onMapLoad = useCallback(() => {
         setIsMapReady(true);
@@ -71,6 +89,10 @@ export const MapGoogle = () => {
                 title={`${vehicle.plate} - ${vehicle.name}`}
                 onClick={() => handleMarkerClick(vehicle)}
                 zIndex={selectedVehicle?.plate === vehicle.plate ? 1 : 0}
+                icon={{
+                    url: createTruckIcon(),
+                    scaledSize: new window.google.maps.Size(30, 30),
+                }}
             />
         ));
     }, [isMapReady, filteredVehicles, handleMarkerClick, selectedVehicle]);
@@ -96,6 +118,16 @@ export const MapGoogle = () => {
                     <p style={{ margin: '4px 0' }}><strong>Frota:</strong> {selectedVehicle.fleet}</p>
                     <p style={{ margin: '4px 0' }}><strong>Equipamento:</strong> {selectedVehicle.equipmentId}</p>
                     <p style={{ margin: '4px 0' }}><strong>Ignição:</strong> {selectedVehicle.ignition}</p>
+                    <p style={{ margin: '4px 0' }}>
+                        <a
+                            href={`https://www.google.com/maps?q=${selectedVehicle.lat},${selectedVehicle.lng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: '#1a73e8', textDecoration: 'none' }}
+                        >
+                            Ver no Google Maps
+                        </a>
+                    </p>
                 </div>
             </InfoWindow>
         );
@@ -110,7 +142,7 @@ export const MapGoogle = () => {
             <GoogleMap
                 mapContainerStyle={containerStyle}
                 center={center}
-                zoom={10}
+                zoom={8}
                 onLoad={onMapLoad}
             >
                 {markers}
