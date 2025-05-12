@@ -33,23 +33,14 @@ export const MapGoogle = () => {
     const [selectedVehicle, setSelectedVehicle] = useState<VehicleLocation | null>(null);
     const [isMapReady, setIsMapReady] = useState(false);
     const { locationVehicles, isLoading, error, searchTerm, refetch } = useVehicles();
-    console.log('Dados atualizados:', locationVehicles);
 
     useEffect(() => {
         refetch();
-
-        const intervalId = setInterval(() => {
-            refetch();
-        }, 120000);
-
-        return () => {
-            clearInterval(intervalId);
-        };
+        const intervalId = setInterval(refetch, 120000);
+        return () => clearInterval(intervalId);
     }, [refetch]);
 
-    const onMapLoad = useCallback(() => {
-        setIsMapReady(true);
-    }, []);
+    const onMapLoad = useCallback(() => setIsMapReady(true), []);
 
     const handleMarkerClick = useCallback((vehicle: VehicleLocation) => {
         setSelectedVehicle(vehicle);
@@ -60,7 +51,6 @@ export const MapGoogle = () => {
     }, []);
 
     const filteredVehicles = useMemo(() => {
-        // Primeiro, vamos agrupar os veículos por placa e pegar o mais recente de cada um
         const uniqueVehicles = locationVehicles.reduce((acc: VehicleLocation[], vehicle: VehicleLocation) => {
             const existingVehicle = acc.find((v: VehicleLocation) => v.plate === vehicle.plate);
             if (!existingVehicle || new Date(vehicle.createdAt) > new Date(existingVehicle.createdAt)) {
@@ -69,7 +59,6 @@ export const MapGoogle = () => {
             return acc;
         }, []);
 
-        // Depois, aplicamos o filtro de busca
         return uniqueVehicles.filter((vehicle: VehicleLocation) =>
             vehicle.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (vehicle.fleet && vehicle.fleet.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -82,10 +71,7 @@ export const MapGoogle = () => {
         return filteredVehicles.map((vehicle: VehicleLocation, index: number) => (
             <Marker
                 key={`${vehicle.plate}-${vehicle.equipmentId}-${index}`}
-                position={{
-                    lat: vehicle.lat,
-                    lng: vehicle.lng
-                }}
+                position={{ lat: vehicle.lat, lng: vehicle.lng }}
                 title={`${vehicle.plate} - ${vehicle.name}`}
                 onClick={() => handleMarkerClick(vehicle)}
                 zIndex={selectedVehicle?.plate === vehicle.plate ? 1 : 0}
@@ -102,14 +88,9 @@ export const MapGoogle = () => {
 
         return (
             <InfoWindow
-                position={{
-                    lat: selectedVehicle.lat,
-                    lng: selectedVehicle.lng
-                }}
+                position={{ lat: selectedVehicle.lat, lng: selectedVehicle.lng }}
                 onCloseClick={handleInfoWindowClose}
-                options={{
-                    pixelOffset: new window.google.maps.Size(0, -30)
-                }}
+                options={{ pixelOffset: new window.google.maps.Size(0, -30) }}
             >
                 <div style={{ padding: '8px' }}>
                     <h3 style={{ margin: '0 0 8px 0' }}>Informações do Veículo</h3>
@@ -138,7 +119,7 @@ export const MapGoogle = () => {
     }
 
     return (
-        <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} >
+        <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
             <GoogleMap
                 mapContainerStyle={containerStyle}
                 center={center}

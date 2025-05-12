@@ -8,7 +8,7 @@ export const VehiclesTable = () => {
     const [page, setPage] = useState(1);
     const [allVehicles, setAllVehicles] = useState<any[]>([]);
     const { vehicles, isLoading, error, refetch, searchTerm } = useVehicles();
-    // console.log(vehicles,'gsegse');
+
     useEffect(() => {
         if (vehicles) {
             setAllVehicles(page === 1 ? vehicles : [...allVehicles, ...vehicles]);
@@ -20,9 +20,7 @@ export const VehiclesTable = () => {
         (vehicle.fleet && vehicle.fleet.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
-    const fetchMoreData = () => {
-        setPage(prev => prev + 1);
-    };
+    const fetchMoreData = () => setPage(prev => prev + 1);
 
     useEffect(() => {
         if (page === 1) {
@@ -32,6 +30,7 @@ export const VehiclesTable = () => {
     }, [page]);
 
     if (isLoading && page === 1) return <div>Carregando...</div>;
+    
     if (error) {
         return (
             <div>
@@ -48,7 +47,7 @@ export const VehiclesTable = () => {
     }
 
     return (
-        <div id="scrollableDiv" className={`h-[500px] datatable-scroll overflow-auto rounded-[16px] custom-vehicles-table mb-10`}>
+        <div id="scrollableDiv" className="h-[500px] datatable-scroll overflow-auto rounded-[16px] custom-vehicles-table mb-10">
             <InfiniteScroll
                 dataLength={filteredVehicles.length}
                 next={fetchMoreData}
@@ -64,13 +63,13 @@ export const VehiclesTable = () => {
                 <DataTable
                     value={filteredVehicles}
                     tableStyle={{ minWidth: '50rem' }}
-                    className={`p-datatable-scrollable-body`}
+                    className="p-datatable-scrollable-body"
                 >
-                    <Column field="plate" header="Placa"></Column>
-                    <Column field="model" header="Modelo"></Column>
-                    <Column field="type" header="Tipo"></Column>
-                    <Column field="nameOwner" header="Proprietário"></Column>
-                    <Column field="status" header="Status"></Column>
+                    <Column field="plate" header="Placa" />
+                    <Column field="model" header="Modelo" />
+                    <Column field="type" header="Tipo" />
+                    <Column field="nameOwner" header="Proprietário" />
+                    <Column field="status" header="Status" />
                 </DataTable>
             </InfiniteScroll>
         </div>

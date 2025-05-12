@@ -20,12 +20,7 @@ export function VehiclesProvider({ children }: { children: ReactNode }) {
     const [type, setType] = useState('tracked');
     const [searchTerm, setSearchTerm] = useState('');
 
-    const {
-        data,
-        isLoading,
-        error,
-        refetch
-    } = useQuery({
+    const { data, isLoading, error, refetch } = useQuery({
         queryKey: ['vehicles', type],
         queryFn: () => getVehicles({ type, page: 1, perPage: 20 }),
         retry: 1,
